@@ -28,15 +28,9 @@ import { UsersModule } from './users/users.module';
         // A single DATABASE_URL (e.g. Neon / hosted Postgres) takes precedence over discrete DB_* values.
         const databaseUrl = config.get<string>('DATABASE_URL');
         if (databaseUrl) {
-          const url = new URL(databaseUrl);
           return {
             ...common,
-            host: url.hostname,
-            port: Number(url.port || 5432),
-            username: decodeURIComponent(url.username),
-            password: decodeURIComponent(url.password),
-            database: url.pathname.slice(1),
-            ssl: url.searchParams.get('sslmode') !== 'disable',
+            url: databaseUrl,
           };
         }
         return {

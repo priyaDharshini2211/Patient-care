@@ -1,5 +1,4 @@
-import { ConflictException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
@@ -26,35 +25,8 @@ export const toProfile = (user: User): UserProfile => ({
 });
 
 @Injectable()
-export class UsersService implements OnModuleInit {
-  private readonly logger = new Logger(UsersService.name);
-
-  constructor(
-    @InjectRepository(User) private readonly users: Repository<User>,
-    private readonly config: ConfigService,
-  ) {}
-
-  /** Seeds a default admin so the app is usable right after first start, and adopts data created before accounts existed. */
-  async onModuleInit(): Promise<void> {
-    const email = this.config.get<string>('SEED_ADMIN_EMAIL', 'admin@example.com').toLowerCase();
-    let admin = await this.users.findOne({ where: { email } });
-
-    if (!admin) {
-      const password = await bcrypt.hash(this.config.get<string>('SEED_ADMIN_PASSWORD', 'Admin@123'), BCRYPT_ROUNDS);
-      admin = await this.users.save(
-        this.users.create({ name: this.config.get('SEED_ADMIN_NAME', 'Admin'), email, password, clinicName: 'Demo Clinic' }),
-      );
-      this.logger.log(`Seeded admin user ${email}`);
-    }
-
-    // Patients created before multi-account support belong to the seeded admin.
-    try {
-      const [, adopted] = await this.users.manager.query('UPDATE patients SET user_id = $1 WHERE user_id IS NULL', [admin.id]);
-      if (adopted) this.logger.log(`Assigned ${adopted} existing patient(s) to ${email}`);
-    } catch (error) {
-      this.logger.warn(`Could not assign existing patients to the admin account: ${(error as Error).message}`);
-    }
-  }
+export class UsersService {
+  constructor(@InjectRepository(User) private readonly users: Repository<User>) {}
 
   /** Returns the user including the password hash (for credential checks only). */
   findByEmailWithPassword(email: string): Promise<User | null> {

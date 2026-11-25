@@ -37,7 +37,7 @@ Pay:  React -> Redux -> PaymentsController -> PaymentsService -> Razorpay -> HMA
 
 ## Quick start
 
-1. **Database** - local Postgres (`docker compose up -d`, loads `backend/database/schema.sql`) or any hosted Postgres such as Neon.
+1. **Database** - Neon (put its PostgreSQL connection string in `backend/.env` as `DATABASE_URL`), or local Postgres (`docker compose up -d`, loads `backend/database/schema.sql`).
 2. **Backend**
    ```
    cd backend
@@ -45,9 +45,9 @@ Pay:  React -> Redux -> PaymentsController -> PaymentsService -> Razorpay -> HMA
    npm install
    npm run start:dev        # http://localhost:3000/api   Swagger: /api/docs
    npm test                 # 42 unit tests
-   npm run seed:demo        # optional: 14 patients / ~35 bills of realistic demo data for the admin account
    ```
    With `DB_SYNC=true` tables are created/updated automatically (development). In production set it to `false` and apply `database/schema.sql` (new database) or `database/migrations/*.sql` (existing database).
+   The backend does not create users or demo records automatically.
 3. **Frontend**
    ```
    cd frontend
@@ -55,10 +55,10 @@ Pay:  React -> Redux -> PaymentsController -> PaymentsService -> Razorpay -> HMA
    npm run dev              # http://localhost:5173 (proxies /api to :3000)
    npm run build            # production bundle (charts are code-split)
    ```
-4. Open the app and **create an account**, or sign in with the seeded demo account `admin@example.com` / `Admin@123` (configurable with `SEED_ADMIN_*`; change it outside development).
+4. Open the app and **register your account**. Create users and enter patient and billing data yourself; no demo account or sample records are seeded on startup.
 
 ### Upgrading an existing database
-`database/migrations/002_accounts_and_tenancy.sql` adds the account columns, per-account patient ownership (existing patients are assigned to the first user), per-account unique patient email, bill due dates and patient profile fields. With `DB_SYNC=true` the same changes are applied automatically on start and orphaned patients are adopted by the seeded admin.
+`database/migrations/002_accounts_and_tenancy.sql` adds account columns, per-account patient ownership, per-account unique patient email, bill due dates and patient profile fields. Apply this migration to an existing database to backfill ownership for existing patients; `DB_SYNC=true` creates or updates the schema but does not seed an account or demo records.
 
 ## Project layout
 
@@ -67,7 +67,7 @@ backend/src
   auth/ users/        registration, login, profile, password change, JWT guard, @CurrentUser()
   patients/ bills/ payments/ dashboard/   controller -> service -> entity (+ dto/); all scoped by the owning account
   common/             response envelope, exception filter, CSV helper, enums
-  seed-demo.ts        optional demo data
+  seed-demo.ts        optional demo data; runs only when explicitly invoked
 backend/database/     schema.sql + migrations/
 frontend/src
   api/                axios client (token, 401 handling, CSV download) + service functions
